@@ -21,6 +21,10 @@ public class MqttWsServerTest {
     public static void main(String[] args) throws Exception {
         Server server = new Server();
         server.setPort(8000);
+        server.setOpenCount(true);
+        server.setCheckHeartbeat(true);
+        server.setOpenStatus(true);
+        server.setOpenExecutor(true);
         server.addEventListener(new EchoMessageEventListener());
         server.setSocketType(SocketType.MQTT_WS);
         server.bind();
@@ -35,7 +39,7 @@ public class MqttWsServerTest {
                     server.send(channel, "yb/notice/", mqttRequest);
                 }
             }
-            Thread.sleep(1000L);
+            Thread.sleep(5000L);
         }
     }
 }

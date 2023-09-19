@@ -1,0 +1,15 @@
+mqtt:
+  port: 8000
+  username: 'admin'
+  password: 123456
+  heart-beat: true
+  reader-idle-time-seconds: 30
+  writer-idle-time-seconds: 10
+  all-idle-time-seconds: 0
+  socket-type: MQTT
+  executor:
+    enable: false
+    core-pool-size: 10
+    maximum-pool-size: 100
+    queue-capacity: 100
+
