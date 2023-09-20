@@ -11,14 +11,17 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
+import io.netty.handler.codec.http.websocketx.WebSocketVersion;
+import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +54,7 @@ public class BaseClient extends Service {
 
     protected EventLoopGroup group;
     protected Bootstrap bootstrap;
+    protected URI uri;
 
     public BaseClient() {
         super();
@@ -63,7 +67,11 @@ public class BaseClient extends Service {
         if (checkHeartbeat) {
             heartbeatHandler = new ClientHeartbeatHandler();
         }
-
+        try {
+            uri = new URI("ws://" + ip + ":" + port);
+        } catch (URISyntaxException e) {
+            logger.error("URI ERROR", e);
+        }
         eventDispatcher = new EventDispatcher(this);
         dispatchHandler = new ClientDispatchHandler(eventDispatcher);
 
@@ -137,6 +145,17 @@ public class BaseClient extends Service {
                     pipeline.addFirst("httpRequestDecoder", new HttpRequestDecoder());
                     pipeline.addFirst("httpObjectAggregator", new HttpObjectAggregator(65536));
                     pipeline.addFirst("httpResponseEncoder", new HttpResponseEncoder());
+                }
+
+                if (socketType.equals(SocketType.WS)) {
+
+                    WebSocketClientHandler webSocketClientHandler = new WebSocketClientHandler(
+                            WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()));
+
+                    pipeline.addLast("httpClientCodec", new HttpClientCodec());
+                    pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
+                    pipeline.addLast("webSocketClientCompressionHandler", WebSocketClientCompressionHandler.INSTANCE);
+                    pipeline.addLast("webSocketClientHandler", webSocketClientHandler);
                 }
 
                 if (checkHeartbeat) {

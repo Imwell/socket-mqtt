@@ -292,3 +292,4 @@ for (int i = 0; i < 5; i++) {
 - https://github.com/netty/netty
 - https://github.com/1ssqq1lxr/iot_push
 - https://github.com/Wizzercn/MqttWk
+- https://github.com/netty/netty/blob/4.1/example/src/main/java/io/netty/example/http/websocketx/server/WebSocketServerInitializer.java

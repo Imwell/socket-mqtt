@@ -16,5 +16,9 @@ public enum SocketType {
     /**
      * MQTT web socket
      */
-    MQTT_WS;
+    MQTT_WS,
+    /**
+     * web socket
+     */
+    WS;
 }
