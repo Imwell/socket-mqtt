@@ -51,10 +51,11 @@ public class BaseClient extends Service {
     protected WrappedChannel channel;
 
     protected Semaphore semaphore = new Semaphore(0);
-
     protected EventLoopGroup group;
     protected Bootstrap bootstrap;
     protected URI uri;
+
+    protected WebSocketClientHandler webSocketClientHandler;
 
     public BaseClient() {
         super();
@@ -77,6 +78,8 @@ public class BaseClient extends Service {
 
         group = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
+        webSocketClientHandler = new WebSocketClientHandler(
+                WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()));
         this.addEventListener(new DefaultMessageEventListener());
     }
 
@@ -149,8 +152,6 @@ public class BaseClient extends Service {
 
                 if (socketType.equals(SocketType.WS)) {
 
-                    WebSocketClientHandler webSocketClientHandler = new WebSocketClientHandler(
-                            WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()));
 
                     pipeline.addLast("httpClientCodec", new HttpClientCodec());
                     pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));

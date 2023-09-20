@@ -13,9 +13,11 @@ import com.yb.socket.pojo.Response;
 import com.yb.socket.service.*;
 import com.yb.socket.service.center.ServerStateReportJob;
 import com.yb.socket.service.client.Client;
+import com.yb.socket.service.server.pipeline.PipLineFactory;
 import com.yb.socket.status.StatusServer;
 import com.yb.socket.util.AddressUtil;
 import com.yb.socket.util.Sequence;
+import com.yb.socket.util.ServerUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -28,7 +30,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
 import io.netty.handler.codec.mqtt.*;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
@@ -109,10 +113,6 @@ public class Server extends Service {
      * 是否注册成功
      */
     private AtomicBoolean registered = new AtomicBoolean(false);
-
-    private String webSocketPath = "/";
-
-    private String mqttVersion = "server, mqtt, mqttv3.1, mqttv3.1.1, mqttv5.0";
 
     private ScheduledExecutorService stateReportService = new ScheduledThreadPoolExecutor(
             1,
@@ -196,20 +196,14 @@ public class Server extends Service {
                     pipeline.addLast(key, handlers.get(key).newInstance());
                 }
 
-                if (socketType.equals(SocketType.MQTT)) {
-                    pipeline.addLast("mqttDecoder", new MqttDecoder());
-                    pipeline.addLast("mqttEncoder", MqttEncoder.INSTANCE);
-                }
+                PipLineFactory.newInstant().getPipLine(pipeline, socketType);
 
-                if (socketType.equals(SocketType.MQTT_WS)) {
-                    pipeline.addLast("httpServerCodec", new HttpServerCodec());
-                    pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(65536));
-                    pipeline.addLast("mqttWebSocketCodec", new MqttWebSocketCodec());
-                    pipeline.addLast("mqttDecoder", new MqttDecoder());
-                    pipeline.addLast("mqttEncoder", MqttEncoder.INSTANCE);
-
-                    WebSocketServerProtocolHandler webSocketHandler = new WebSocketServerProtocolHandler(webSocketPath, mqttVersion);
-                    pipeline.addLast("webSocketHandler", webSocketHandler);
+                // websocket ssl配置
+                if (socketType.equals(SocketType.WS)) {
+                    final SslContext sslCtx = ServerUtil.buildSslContext();
+                    if (sslCtx != null) {
+                        pipeline.addLast(sslCtx.newHandler(ch.alloc()));
+                    }
                 }
 
                 if (checkHeartbeat) {
@@ -229,9 +223,13 @@ public class Server extends Service {
                 }
             }
         });
-
         final InetSocketAddress socketAddress = new InetSocketAddress(port);
-        ChannelFuture future = bootstrap.bind(socketAddress);
+        ChannelFuture future;
+        if (SocketType.WS.equals(socketType)) {
+            future = bootstrap.bind(port);
+        } else {
+            future = bootstrap.bind(socketAddress);
+        }
         future.addListener((ChannelFutureListener) ch -> {
             ch.await();
             if (ch.isSuccess()) {

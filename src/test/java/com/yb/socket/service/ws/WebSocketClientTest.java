@@ -1,22 +1,18 @@
-package com.yb.socket.service.mqttws;
+package com.yb.socket.service.ws;
 
 import com.alibaba.fastjson.JSONObject;
-import com.yb.socket.codec.JsonDecoder;
-import com.yb.socket.codec.JsonEncoder;
 import com.yb.socket.pojo.Request;
 import com.yb.socket.pojo.Response;
 import com.yb.socket.service.SocketType;
-import com.yb.socket.service.client.Client;
 import com.yb.socket.service.client.WebSocketClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
-public class MqttWsClientTest {
+public class WebSocketClientTest {
 
-    private static final Logger logger = LoggerFactory.getLogger(MqttWsClientTest.class);
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketClientTest.class);
 
     public static void main(String[] args) {
 
