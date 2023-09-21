@@ -199,12 +199,12 @@ public class Server extends Service {
                 PipLineFactory.newInstant().getPipLine(pipeline, socketType);
 
                 // websocket ssl配置
-                if (socketType.equals(SocketType.WS)) {
-                    final SslContext sslCtx = ServerUtil.buildSslContext();
-                    if (sslCtx != null) {
-                        pipeline.addLast(sslCtx.newHandler(ch.alloc()));
-                    }
-                }
+//                if (socketType.equals(SocketType.WS)) {
+//                    final SslContext sslCtx = ServerUtil.buildSslContext();
+//                    if (sslCtx != null) {
+//                        pipeline.addLast(sslCtx.newHandler(ch.alloc()));
+//                    }
+//                }
 
                 if (checkHeartbeat) {
                     IdleStateHandler timeoutHandler = new IdleStateHandler(readerIdleTimeSeconds,

@@ -1,5 +1,6 @@
 package com.yb.socket.service.ws;
 
+import com.yb.socket.listener.DefaultWebSocketMessageEventListener;
 import com.yb.socket.pojo.MqttRequest;
 import com.yb.socket.pojo.Request;
 import com.yb.socket.service.SocketType;
@@ -20,9 +21,9 @@ public class WebSocketServerTest {
 
         WebSocketServer server = new WebSocketServer();
         server.setPort(8000);
-        server.setOpenCount(true);
         server.setCheckHeartbeat(true);
         server.setSocketType(SocketType.WS);
+        server.addEventListener(new DefaultWebSocketMessageEventListener());
         server.bind();
 
         //模拟推送

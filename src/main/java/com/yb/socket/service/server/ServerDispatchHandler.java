@@ -26,6 +26,12 @@ public class ServerDispatchHandler extends ChannelInboundHandlerAdapter {
         this.eventDispatcher = eventDispatcher;
     }
 
+    /**
+     * 当前channel每次读取一个信息时触发
+     * @param ctx
+     * @param msg
+     * @throws Exception
+     */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         String channelId = ctx.channel().id().asShortText();
@@ -37,6 +43,11 @@ public class ServerDispatchHandler extends ChannelInboundHandlerAdapter {
         super.channelRead(ctx, msg);
     }
 
+    /**
+     * ChannelHandler上下文的Channel被激活
+     * @param ctx
+     * @throws Exception
+     */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         WrappedChannel channel = new WrappedChannel(ctx.channel());
@@ -49,6 +60,11 @@ public class ServerDispatchHandler extends ChannelInboundHandlerAdapter {
         super.channelActive(ctx);
     }
 
+    /**
+     * ChannelHandlerContext上下文中的Channel关闭
+     * @param ctx
+     * @throws Exception
+     */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         closeChannel(ctx);

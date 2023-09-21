@@ -18,9 +18,6 @@ import org.slf4j.LoggerFactory;
 public class ClientHeartbeatHandler extends ChannelInboundHandlerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(ClientHeartbeatHandler.class);
 
-    public ClientHeartbeatHandler() {
-    }
-
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {

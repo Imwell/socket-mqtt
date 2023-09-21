@@ -76,11 +76,11 @@ public abstract class Service {
     /**
      * 心跳检查时的读空闲时间
      */
-    protected int readerIdleTimeSeconds = 30;
+    protected int readerIdleTimeSeconds = 60;
     /**
      * 心跳检查时的写空闲时间
      */
-    protected int writerIdleTimeSeconds = 10;
+    protected int writerIdleTimeSeconds = 30;
     /**
      * 心跳检查时的读写空闲时间
      */

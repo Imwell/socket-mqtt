@@ -54,7 +54,6 @@ public class BaseClient extends Service {
     protected EventLoopGroup group;
     protected Bootstrap bootstrap;
     protected URI uri;
-
     protected WebSocketClientHandler webSocketClientHandler;
 
     public BaseClient() {
@@ -75,7 +74,6 @@ public class BaseClient extends Service {
         }
         eventDispatcher = new EventDispatcher(this);
         dispatchHandler = new ClientDispatchHandler(eventDispatcher);
-
         group = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
         webSocketClientHandler = new WebSocketClientHandler(
@@ -88,15 +86,32 @@ public class BaseClient extends Service {
         curServer = socketAddress;
         try {
             ChannelFuture future = bootstrap.connect(socketAddress).sync();
+            return doFuture(future, sync);
+        } catch (Exception ex) {
+            throw new SocketRuntimeException(ex);
+        }
+    }
+
+    protected ChannelFuture doConnect(boolean sync) {
+        try {
+            ChannelFuture future = bootstrap.connect(uri.getHost(), port).sync();
+            return doFuture(future, sync);
+        } catch (Exception ex) {
+            throw new SocketRuntimeException(ex);
+        }
+    }
+
+    private ChannelFuture doFuture(ChannelFuture future, boolean sync) {
+        try {
             future.addListener((ChannelFutureListener) ch -> {
                 ch.await();
                 if (ch.isSuccess()) {
-                    channel = new WrappedChannel(ch.channel());
+                    channel = new WrappedChannel(ch.channel(), socketType);
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Connect to '{}' success.", socketAddress);
+                        logger.debug("Connect to '{}' success.", uri);
                     }
                 } else {
-                    logger.error("Failed to connect to '{}', caused by: '{}'.", socketAddress, ch.cause());
+                    logger.error("Failed to connect to '{}', caused by: '{}'.", uri, ch.cause());
                 }
 
                 semaphore.release(Integer.MAX_VALUE - semaphore.availablePermits());
@@ -152,25 +167,27 @@ public class BaseClient extends Service {
 
                 if (socketType.equals(SocketType.WS)) {
 
-
                     pipeline.addLast("httpClientCodec", new HttpClientCodec());
                     pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
                     pipeline.addLast("webSocketClientCompressionHandler", WebSocketClientCompressionHandler.INSTANCE);
                     pipeline.addLast("webSocketClientHandler", webSocketClientHandler);
+                    pipeline.addLast(new WebSocketHeartbeatHandler());
                 }
 
                 if (checkHeartbeat) {
-                    IdleStateHandler timeoutHandler = new IdleStateHandler(readerIdleTimeSeconds,
+                    IdleStateHandler idleStateHandler = new IdleStateHandler(readerIdleTimeSeconds,
                             writerIdleTimeSeconds, allIdleTimeSeconds);
-                    pipeline.addLast("timeout", timeoutHandler);
-                    pipeline.addLast("idleHandler", heartbeatHandler);
+                    pipeline.addLast("idleStateHandler", idleStateHandler);
+                    pipeline.addLast("heartbeatHandler", heartbeatHandler);
                 }
 
                 // 注册事件分发Handler
                 pipeline.addLast("dispatchHandler", dispatchHandler);
             }
         });
-
+        if (socketType.equals(SocketType.WS)) {
+            return doConnect(true);
+        }
         return doConnect(socketAddress, sync);
     }
 

@@ -15,7 +15,11 @@ public class WebSocketClientTest {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketClientTest.class);
 
     public static void main(String[] args) {
+        WebSocketClientTest webSocketClientTest = new WebSocketClientTest();
+        webSocketClientTest.start();
+    }
 
+    public void start() {
         final String broker = "localhost";
         final int port = 8000;
         WebSocketClient webSocketClient = new WebSocketClient();
@@ -24,17 +28,15 @@ public class WebSocketClientTest {
         webSocketClient.setSocketType(SocketType.WS);
         webSocketClient.connect(new InetSocketAddress(broker, port), true);
 
-        for (int i = 0; i < 2; i++) {
-            JSONObject message = new JSONObject();
-            message.put("action", "echo");
-            message.put("message", "hello world!");
+        JSONObject message = new JSONObject();
+        message.put("action", "echo");
+        message.put("message", "hello world!");
 
-            Request request = new Request();
-            request.setSequence(i);
-            request.setMessage(message);
-            Response response = webSocketClient.sendWithSync(request, 3000);
+        Request request = new Request();
+        request.setSequence(0);
+        request.setMessage(message);
+        Response response = webSocketClient.sendWithSync(request, 5000);
 
-            logger.info("成功接收到同步的返回: '{}'.", response);
-        }
+        logger.info("成功接收到同步的返回: '{}'.", response);
     }
 }

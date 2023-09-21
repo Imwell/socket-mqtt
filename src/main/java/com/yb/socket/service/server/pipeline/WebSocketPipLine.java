@@ -1,7 +1,6 @@
 package com.yb.socket.service.server.pipeline;
 
 import com.yb.socket.service.SocketType;
-import com.yb.socket.service.server.WebSocketFrameHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
@@ -28,6 +27,5 @@ public class WebSocketPipLine implements PipLineInterface {
         pipeline.addLast(new HttpObjectAggregator(65536));
         pipeline.addLast(new WebSocketServerCompressionHandler());
         pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true));
-        pipeline.addLast(new WebSocketFrameHandler());
     }
 }

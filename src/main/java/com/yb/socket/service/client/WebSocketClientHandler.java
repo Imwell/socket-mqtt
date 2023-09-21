@@ -1,11 +1,18 @@
 package com.yb.socket.service.client;
 
+import com.yb.socket.future.InvokeFuture;
+import com.yb.socket.pojo.Response;
+import com.yb.socket.service.WrappedChannel;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.websocketx.*;
 import io.netty.util.CharsetUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> {
+
+    private static final Logger logger = LoggerFactory.getLogger(WebSocketClientHandler.class);
 
     private final WebSocketClientHandshaker handshaker;
     private ChannelPromise handshakeFuture;
@@ -58,7 +65,16 @@ public class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> 
         WebSocketFrame frame = (WebSocketFrame) msg;
         if (frame instanceof TextWebSocketFrame) {
             TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
-            System.out.println("WebSocket Client received message: " + textFrame.text());
+            logger.info("WebSocket Client received message: {}", textFrame.text());
+            // todo 测试用
+//            Server server = ServerContext.getContext().getServer();
+//            String message = textFrame.text();
+//            MqttRequest mqttRequest = new MqttRequest((message.getBytes()));
+//            if (server.getChannels().size() > 0) {
+//                for (WrappedChannel channel : server.getChannels().values()) {
+//                    server.send(channel, "yb/notice/", mqttRequest);
+//                }
+//            }
         } else if (frame instanceof PongWebSocketFrame) {
             System.out.println("WebSocket Client received pong");
         } else if (frame instanceof CloseWebSocketFrame) {

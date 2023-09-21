@@ -1,5 +1,6 @@
 package com.yb.socket.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.yb.socket.exception.SocketRuntimeException;
 import com.yb.socket.future.InvokeFuture;
 import com.yb.socket.pojo.Heartbeat;
@@ -9,6 +10,7 @@ import com.yb.socket.service.server.Server;
 import com.yb.socket.service.server.ServerContext;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 
@@ -23,6 +25,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class WrappedChannel implements Channel {
     private Channel channel;
+    private SocketType socketType;
     private ConcurrentHashMap<Integer, InvokeFuture> futures = new ConcurrentHashMap<>();
 
     private final ChannelFutureListener sendSuccessListener = future -> {
@@ -40,6 +43,11 @@ public class WrappedChannel implements Channel {
             throw new IllegalArgumentException("channel can not be null.");
         }
         this.channel = channel;
+    }
+
+    public WrappedChannel(Channel channel, SocketType socketType) {
+        this(channel);
+        this.socketType = socketType;
     }
 
     public ChannelFuture send(Object message) {
@@ -299,6 +307,10 @@ public class WrappedChannel implements Channel {
     }
 
     public ChannelFuture writeAndFlush(Object message, boolean isStatistic) {
+        if (socketType != null && socketType.equals(SocketType.WS)) {
+            TextWebSocketFrame textWebSocketFrame = new TextWebSocketFrame(JSONObject.toJSONString(message));
+            return channel.writeAndFlush(textWebSocketFrame);
+        }
         ChannelFuture future = channel.writeAndFlush(message);
         if (isStatistic) {
             if (message instanceof Heartbeat) {
