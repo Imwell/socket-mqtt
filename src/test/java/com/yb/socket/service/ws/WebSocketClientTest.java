@@ -1,10 +1,12 @@
 package com.yb.socket.service.ws;
 
 import com.alibaba.fastjson.JSONObject;
+import com.yb.socket.listener.WebSocketClientMessageEventListener;
 import com.yb.socket.pojo.Request;
 import com.yb.socket.pojo.Response;
 import com.yb.socket.service.SocketType;
 import com.yb.socket.service.client.WebSocketClient;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,8 +27,10 @@ public class WebSocketClientTest {
         WebSocketClient webSocketClient = new WebSocketClient();
         webSocketClient.setIp(broker);
         webSocketClient.setPort(port);
+        webSocketClient.setOpenExecutor(true);
         webSocketClient.setSocketType(SocketType.WS);
-        webSocketClient.connect(new InetSocketAddress(broker, port), true);
+        webSocketClient.addEventListener(new WebSocketClientMessageEventListener());
+        webSocketClient.connect(true);
 
         JSONObject message = new JSONObject();
         message.put("action", "echo");
@@ -38,5 +42,16 @@ public class WebSocketClientTest {
         Response response = webSocketClient.sendWithSync(request, 5000);
 
         logger.info("成功接收到同步的返回: '{}'.", response);
+
+//        sendMessage(request);
+    }
+
+    private void sendMessage(Object message) {
+
+        message = new TextWebSocketFrame(JSONObject.toJSONString(message));
+        System.out.println(message);
+
+        TextWebSocketFrame textWebSocketFrame = new TextWebSocketFrame(JSONObject.toJSONString(message));
+        System.out.println(textWebSocketFrame);
     }
 }

@@ -6,10 +6,13 @@ import com.alibaba.fastjson.JSONObject;
 import com.yb.socket.codec.JsonDecoder;
 import com.yb.socket.codec.JsonEncoder;
 import com.yb.socket.exception.SocketRuntimeException;
+import com.yb.socket.listener.DefaultMessageEventListener;
 import com.yb.socket.pojo.Request;
 import com.yb.socket.pojo.Response;
 import com.yb.socket.util.AddressUtil;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelPipeline;
+import io.netty.handler.timeout.IdleStateHandler;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +22,7 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  * @author daoshenzzg@163.com
@@ -44,6 +48,16 @@ public class Client extends BaseClient {
      */
     private AtomicBoolean reConnecting = new AtomicBoolean(false);
 
+    @Override
+    protected void init() {
+        super.init();
+        // 将一些handler放在这里初始化是为了防止多例的产生。
+        if (checkHeartbeat) {
+            heartbeatHandler = new ClientHeartbeatHandler();
+        }
+        this.addEventListener(new DefaultMessageEventListener());
+    }
+
     public ChannelFuture connect() {
         return connect(true);
     }
@@ -59,7 +73,6 @@ public class Client extends BaseClient {
                 if (serverList == null) {
                     serverList = getAddressByCenter();
                 }
-
                 if (serverList == null || serverList.size() <= 0) {
                     throw new SocketRuntimeException("can not get server list from centerAddr property.");
                 }
@@ -68,12 +81,23 @@ public class Client extends BaseClient {
 
         for (SocketAddress server : serverList) {
             try {
-                return super.connect(server, sync);
+                return super.connect(server, sync, this::consumer);
             } catch (Exception ex) { // socket timeout
             }
         }
         throw new SocketRuntimeException("can not connect to server[ " + serverList + "]");
 
+    }
+
+    private void consumer(ChannelPipeline pipeline) {
+        if (checkHeartbeat) {
+            IdleStateHandler idleStateHandler = new IdleStateHandler(readerIdleTimeSeconds,
+                    writerIdleTimeSeconds, allIdleTimeSeconds);
+            pipeline.addLast("idleStateHandler", idleStateHandler);
+            pipeline.addLast("heartbeatHandler", heartbeatHandler);
+        }
+        // 注册事件分发Handler
+        pipeline.addLast("dispatchHandler", dispatchHandler);
     }
 
     @Override
@@ -114,7 +138,7 @@ public class Client extends BaseClient {
                     baseClient.addChannelHandler("decoder", JsonDecoder::new);
                     baseClient.addChannelHandler("encoder", JsonEncoder::new);
                     //连接注册中心
-                    ChannelFuture future = baseClient.connect(addresses[i], true);
+                    ChannelFuture future = baseClient.connect(addresses[i], true, this::consumer);
                     future.await();
                     if (future.isSuccess() && future.cause() == null) {
                         //获取server列表

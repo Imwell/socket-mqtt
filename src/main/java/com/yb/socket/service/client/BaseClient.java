@@ -1,5 +1,6 @@
 package com.yb.socket.service.client;
 
+import com.sun.istack.internal.Nullable;
 import com.yb.socket.exception.SocketRuntimeException;
 import com.yb.socket.exception.SocketTimeoutException;
 import com.yb.socket.listener.DefaultMessageEventListener;
@@ -23,8 +24,11 @@ import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * @author daoshenzzg@163.com
@@ -54,7 +58,6 @@ public class BaseClient extends Service {
     protected EventLoopGroup group;
     protected Bootstrap bootstrap;
     protected URI uri;
-    protected WebSocketClientHandler webSocketClientHandler;
 
     public BaseClient() {
         super();
@@ -63,10 +66,6 @@ public class BaseClient extends Service {
     @Override
     protected void init() {
         super.init();
-        // 将一些handler放在这里初始化是为了防止多例的产生。
-        if (checkHeartbeat) {
-            heartbeatHandler = new ClientHeartbeatHandler();
-        }
         try {
             uri = new URI("ws://" + ip + ":" + port);
         } catch (URISyntaxException e) {
@@ -76,9 +75,6 @@ public class BaseClient extends Service {
         dispatchHandler = new ClientDispatchHandler(eventDispatcher);
         group = new NioEventLoopGroup();
         bootstrap = new Bootstrap();
-        webSocketClientHandler = new WebSocketClientHandler(
-                WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders()));
-        this.addEventListener(new DefaultMessageEventListener());
     }
 
     protected ChannelFuture doConnect(final SocketAddress socketAddress, boolean sync) {
@@ -139,10 +135,10 @@ public class BaseClient extends Service {
     }
 
     public ChannelFuture connect(final SocketAddress socketAddress) {
-        return connect(socketAddress, true);
+        return connect(socketAddress, true, null);
     }
 
-    public ChannelFuture connect(final SocketAddress socketAddress, boolean sync) {
+    public ChannelFuture connect(final SocketAddress socketAddress, boolean sync, @Nullable Consumer<ChannelPipeline> channelFunction) {
         init();
         bootstrap.option(ChannelOption.SO_KEEPALIVE, keepAlive);
         bootstrap.option(ChannelOption.TCP_NODELAY, tcpNoDelay);
@@ -165,28 +161,14 @@ public class BaseClient extends Service {
                     pipeline.addFirst("httpResponseEncoder", new HttpResponseEncoder());
                 }
 
-                if (socketType.equals(SocketType.WS)) {
-
-                    pipeline.addLast("httpClientCodec", new HttpClientCodec());
-                    pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
-                    pipeline.addLast("webSocketClientCompressionHandler", WebSocketClientCompressionHandler.INSTANCE);
-                    pipeline.addLast("webSocketClientHandler", webSocketClientHandler);
-                    pipeline.addLast(new WebSocketHeartbeatHandler());
+                if (channelFunction != null) {
+                    channelFunction.accept(pipeline);
                 }
 
-                if (checkHeartbeat) {
-                    IdleStateHandler idleStateHandler = new IdleStateHandler(readerIdleTimeSeconds,
-                            writerIdleTimeSeconds, allIdleTimeSeconds);
-                    pipeline.addLast("idleStateHandler", idleStateHandler);
-                    pipeline.addLast("heartbeatHandler", heartbeatHandler);
-                }
-
-                // 注册事件分发Handler
-                pipeline.addLast("dispatchHandler", dispatchHandler);
             }
         });
         if (socketType.equals(SocketType.WS)) {
-            return doConnect(true);
+            return doConnect(sync);
         }
         return doConnect(socketAddress, sync);
     }

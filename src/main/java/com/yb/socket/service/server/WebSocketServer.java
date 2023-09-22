@@ -18,7 +18,7 @@ public class WebSocketServer extends Server {
     }
 
     public ChannelFuture send(WrappedChannel channel, Request request) throws InterruptedException {
-//        return channel.writeAndFlush(new TextWebSocketFrame("服务器发送：" + request.getMessage()));
-        return channel.send(request);
+        return channel.writeAndFlush(new TextWebSocketFrame("服务器发送：" + request.getMessage()));
+//        return channel.send(request);
     }
 }
