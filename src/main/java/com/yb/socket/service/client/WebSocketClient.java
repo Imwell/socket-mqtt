@@ -1,5 +1,6 @@
 package com.yb.socket.service.client;
 
+import com.yb.socket.exception.SocketRuntimeException;
 import com.yb.socket.pojo.Request;
 import com.yb.socket.pojo.Response;
 import io.netty.channel.ChannelFuture;
@@ -15,24 +16,33 @@ import java.net.InetSocketAddress;
 
 public class WebSocketClient extends BaseClient {
 
+    private WebSocketClientHandler webSocketClientHandler;
+
     @Override
     protected void init() {
         super.init();
+        webSocketClientHandler = new WebSocketClientHandler(
+                WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders())
+                , eventDispatcher);
         if (checkHeartbeat) {
             heartbeatHandler = new WebSocketHeartbeatHandler();
         }
     }
 
     public ChannelFuture connect(boolean sync) {
-        return super.connect(new InetSocketAddress(ip, port), sync, (pipeline) -> {
-            pipeline.addLast("httpClientCodec", new HttpClientCodec());
-            pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
-            pipeline.addLast("webSocketClientCompressionHandler", WebSocketClientCompressionHandler.INSTANCE);
-            WebSocketClientHandler webSocketClientHandler = new WebSocketClientHandler(
-                    WebSocketClientHandshakerFactory.newHandshaker(uri, WebSocketVersion.V13, null, true, new DefaultHttpHeaders())
-                    , eventDispatcher);
-            pipeline.addLast("webSocketClientHandler", webSocketClientHandler);
-        });
+        try {
+            ChannelFuture connect = super.connect(new InetSocketAddress(ip, port), sync, (pipeline) -> {
+                pipeline.addLast("httpClientCodec", new HttpClientCodec());
+                pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
+                pipeline.addLast("webSocketClientCompressionHandler", WebSocketClientCompressionHandler.INSTANCE);
+                pipeline.addLast("webSocketClientHandler", webSocketClientHandler);
+            });
+            // 确认正常连接之后再进行返回
+            webSocketClientHandler.handshakeFuture().sync();
+            return connect;
+        } catch (InterruptedException e) {
+            throw new SocketRuntimeException(e);
+        }
     }
 
 //    @Override

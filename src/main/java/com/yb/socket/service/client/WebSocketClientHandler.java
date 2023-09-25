@@ -19,8 +19,8 @@ public class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> 
     private static final Logger logger = LoggerFactory.getLogger(WebSocketClientHandler.class);
 
     private final WebSocketClientHandshaker handshaker;
+    private final EventDispatcher eventDispatcher;
     private ChannelPromise handshakeFuture;
-    private EventDispatcher eventDispatcher;
 
     public WebSocketClientHandler(WebSocketClientHandshaker handshaker, EventDispatcher eventDispatcher) {
         this.handshaker = handshaker;
@@ -61,7 +61,6 @@ public class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> 
             return;
         }
 
-
         if (msg instanceof FullHttpResponse) {
             FullHttpResponse response = (FullHttpResponse) msg;
             throw new IllegalStateException(
@@ -71,30 +70,6 @@ public class WebSocketClientHandler extends SimpleChannelInboundHandler<Object> 
 
         WrappedChannel channel = ((BaseClient) eventDispatcher.getService()).getChannel();
         eventDispatcher.dispatchMessageEvent(ctx, channel, msg);
-
-//        try {
-//            WebSocketFrame frame = (WebSocketFrame) msg;
-//            if (frame instanceof TextWebSocketFrame) {
-//                TextWebSocketFrame textFrame = (TextWebSocketFrame) frame;
-//                logger.info("WebSocket Client received message: {}", textFrame.text());
-//                // todo 测试用
-////                Server server = ServerContext.getContext().getServer();
-////                String message = textFrame.text();
-////                MqttRequest mqttRequest = new MqttRequest((message.getBytes()));
-////                if (server.getChannels().size() > 0) {
-////                    for (WrappedChannel ch : server.getChannels().values()) {
-////                        server.send(ch, "mqtt", mqttRequest);
-////                    }
-////                }
-//            } else if (frame instanceof PongWebSocketFrame) {
-//                System.out.println("WebSocket Client received pong");
-//            } else if (frame instanceof CloseWebSocketFrame) {
-//                System.out.println("WebSocket Client received closing");
-//                ctx.channel().close();
-//            }
-//        } catch (Exception exception) {
-//            logger.error("ERROR", exception);
-//        }
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.yb.socket.service.server;
 
+import com.alibaba.fastjson.JSONObject;
 import com.yb.socket.pojo.Request;
 import com.yb.socket.service.WrappedChannel;
 import io.netty.channel.ChannelFuture;
@@ -18,7 +19,7 @@ public class WebSocketServer extends Server {
     }
 
     public ChannelFuture send(WrappedChannel channel, Request request) throws InterruptedException {
-        return channel.writeAndFlush(new TextWebSocketFrame("服务器发送：" + request.getMessage()));
+        return channel.writeAndFlush(new TextWebSocketFrame(JSONObject.toJSONString(request)));
 //        return channel.send(request);
     }
 }

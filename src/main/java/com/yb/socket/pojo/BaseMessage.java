@@ -9,9 +9,9 @@ import java.io.Serializable;
 public class BaseMessage implements Serializable {
     private static final long serialVersionUID = 1L;
 
-    protected int sequence;
+    protected Integer sequence;
 
-    public int getSequence() {
+    public Integer getSequence() {
         return sequence;
     }
     public void setSequence(int sequence) {

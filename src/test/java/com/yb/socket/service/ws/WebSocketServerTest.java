@@ -1,7 +1,6 @@
 package com.yb.socket.service.ws;
 
-import com.yb.socket.listener.DefaultWebSocketMessageEventListener;
-import com.yb.socket.pojo.MqttRequest;
+import com.yb.socket.listener.WebSocketServerMessageEventListener;
 import com.yb.socket.pojo.Request;
 import com.yb.socket.service.SocketType;
 import com.yb.socket.service.WrappedChannel;
@@ -23,7 +22,7 @@ public class WebSocketServerTest {
         server.setPort(8000);
         server.setCheckHeartbeat(true);
         server.setSocketType(SocketType.WS);
-        server.addEventListener(new DefaultWebSocketMessageEventListener());
+        server.addEventListener(new WebSocketServerMessageEventListener());
         server.bind();
 
         //模拟推送
@@ -33,7 +32,7 @@ public class WebSocketServerTest {
                 logger.info("模拟推送消息");
                 for (WrappedChannel channel : server.getChannels().values()) {
                     Request request = new Request();
-                    request.setMessage(message);
+                    request.setMessage("服务器发送:" + message);
                     server.send(channel, request);
                 }
             }
