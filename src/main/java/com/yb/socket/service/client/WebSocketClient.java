@@ -11,6 +11,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketClientHandshakerFactory;
 import io.netty.handler.codec.http.websocketx.WebSocketVersion;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketClientCompressionHandler;
+import io.netty.handler.timeout.IdleStateHandler;
 
 import java.net.InetSocketAddress;
 
@@ -32,13 +33,19 @@ public class WebSocketClient extends BaseClient {
     public ChannelFuture connect(boolean sync) {
         try {
             ChannelFuture connect = super.connect(new InetSocketAddress(ip, port), sync, (pipeline) -> {
+
+                pipeline.addLast("idleStateHandler", new IdleStateHandler(30, 10, allIdleTimeSeconds));
+                pipeline.addLast("heartbeatHandler", heartbeatHandler);
+
                 pipeline.addLast("httpClientCodec", new HttpClientCodec());
                 pipeline.addLast("httpObjectAggregator", new HttpObjectAggregator(8192));
                 pipeline.addLast("webSocketClientCompressionHandler", WebSocketClientCompressionHandler.INSTANCE);
                 pipeline.addLast("webSocketClientHandler", webSocketClientHandler);
+
             });
             // 确认正常连接之后再进行返回
             webSocketClientHandler.handshakeFuture().sync();
+            // 开启ws心跳，ws中不能加入心跳handler
             return connect;
         } catch (InterruptedException e) {
             throw new SocketRuntimeException(e);
