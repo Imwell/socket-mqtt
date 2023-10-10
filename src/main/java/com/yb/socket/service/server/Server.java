@@ -190,6 +190,16 @@ public class Server extends Service {
             public void initChannel(SocketChannel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
 
+                if (checkHeartbeat) {
+                    // 这个handler是个特殊的handler，它通常需要在其它handler之前。因为它会监听连接的空闲状态并触发相应事件。
+                    // 如果在之后，那么其它空闲连接已经处理事件了，那么这个handler检测就会出现问题。
+                    // 例如: 我实际上在接受心跳，但总是会将其判断为空闲状态
+                    IdleStateHandler timeoutHandler = new IdleStateHandler(readerIdleTimeSeconds,
+                            writerIdleTimeSeconds, allIdleTimeSeconds);
+                    pipeline.addLast("timeoutHandler", timeoutHandler);
+                    pipeline.addLast("heartbeatHandler", heartbeatHandler);
+                }
+
                 // 注册各种自定义Handler
                 LinkedHashMap<String, ChannelHandlerFunc> handlers = getHandlers();
                 for (String key : handlers.keySet()) {
@@ -205,13 +215,6 @@ public class Server extends Service {
 //                        pipeline.addLast(sslCtx.newHandler(ch.alloc()));
 //                    }
 //                }
-
-                if (checkHeartbeat) {
-                    IdleStateHandler timeoutHandler = new IdleStateHandler(readerIdleTimeSeconds,
-                            writerIdleTimeSeconds, allIdleTimeSeconds);
-                    pipeline.addLast("timeoutHandler", timeoutHandler);
-                    pipeline.addLast("heartbeatHandler", heartbeatHandler);
-                }
 
                 // 注册事件分发Handler
                 ServerDispatchHandler dispatchHandler = new ServerDispatchHandler(eventDispatcher);

@@ -34,7 +34,7 @@ public class WebSocketClient extends BaseClient {
         try {
             ChannelFuture connect = super.connect(new InetSocketAddress(ip, port), sync, (pipeline) -> {
 
-                pipeline.addLast("idleStateHandler", new IdleStateHandler(30, 10, allIdleTimeSeconds));
+                pipeline.addLast("idleStateHandler", new IdleStateHandler(readerIdleTimeSeconds, writerIdleTimeSeconds, allIdleTimeSeconds));
                 pipeline.addLast("heartbeatHandler", heartbeatHandler);
 
                 pipeline.addLast("httpClientCodec", new HttpClientCodec());

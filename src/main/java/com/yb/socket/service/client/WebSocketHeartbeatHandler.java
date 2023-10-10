@@ -26,7 +26,6 @@ public class WebSocketHeartbeatHandler extends ChannelDuplexHandler {
             } else if (event.state() == IdleState.WRITER_IDLE) {
                 logger.info("Send heartbeat");
                 ctx.channel().writeAndFlush(new PingWebSocketFrame());
-//                ctx.writeAndFlush(new PingWebSocketFrame());
             }
         }
     }

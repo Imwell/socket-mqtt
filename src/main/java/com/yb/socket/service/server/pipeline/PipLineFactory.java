@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class PipLineFactory {
 
-    private List<PipLineInterface> lineInterface;
+    private final List<PipLineInterface> lineInterface;
 
     public PipLineFactory() {
         List<PipLineInterface> list = new ArrayList<>();

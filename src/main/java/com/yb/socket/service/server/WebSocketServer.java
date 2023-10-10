@@ -20,6 +20,5 @@ public class WebSocketServer extends Server {
 
     public ChannelFuture send(WrappedChannel channel, Request request) throws InterruptedException {
         return channel.writeAndFlush(new TextWebSocketFrame(JSONObject.toJSONString(request)));
-//        return channel.send(request);
     }
 }
