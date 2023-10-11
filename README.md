@@ -13,7 +13,7 @@ socket-mqtt：
 - 各种网络参数、连接池实现、监听器实现等可配置可替换
 - 可实现对等集群（见[负载均衡方案](LOAD_BALANCE.md)）
 - 提供数据统计/监控组件
-- 支持普通socket、MQTT、MQTT web socket协议及[自定义协议](src/main/java/com/yb/socket/pojo/protocol/README.md)
+- 支持普通socket、MQTT、MQTT web socket、websocket协议及[自定义协议](src/main/java/com/yb/socket/pojo/protocol/README.md)
 
 # 项目结构
 
