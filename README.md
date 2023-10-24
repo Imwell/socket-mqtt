@@ -275,6 +275,59 @@ for (int i = 0; i < 5; i++) {
     Thread.sleep(5000L);
 }  
 ```
+
+## websocket server demo
+```java
+WebSocketServer server = new WebSocketServer();
+server.setPort(8000);
+server.setCheckHeartbeat(true);
+server.setSocketType(SocketType.WS);
+server.addEventListener(new WebSocketServerMessageEventListener());
+server.bind();
+
+
+//模拟推送
+String message = "this is a web socket message!";
+while (true) {
+    if (server.getChannels().size() > 0) {
+        logger.info("模拟推送消息");
+        for (WrappedChannel channel : server.getChannels().values()) {
+            Request request = new Request();
+            request.setMessage("服务器发送:" + message);
+            server.send(channel, request);
+        }
+    }
+    Thread.sleep(5000L);
+}
+```
+
+## websocket client demo
+```java
+final String broker = "localhost";
+final int port = 8000;
+WebSocketClient webSocketClient = new WebSocketClient();
+webSocketClient.setIp(broker);
+webSocketClient.setPort(port);
+webSocketClient.setOpenExecutor(true);
+webSocketClient.setSocketType(SocketType.WS);
+webSocketClient.addEventListener(new WebSocketClientMessageEventListener());
+webSocketClient.connect(true);
+
+while (true) {
+    JSONObject message = new JSONObject();
+    message.put("action", "echo");
+    message.put("message", "hello world!");
+
+    Request request = new Request();
+    request.setSequence(0);
+    request.setMessage(message);
+    Response response = webSocketClient.sendWithSync(request, 5000);
+
+    logger.info("成功接收到同步的返回: '{}'.", response);
+
+    Thread.sleep(2000L);
+}
+```
 # 个人更新部分
 - 在基础上拓展了websocket的服务端和客户端协议
 - 修改了代码结构，更方便一些功能代码的编写
